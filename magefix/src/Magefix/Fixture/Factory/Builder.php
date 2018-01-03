@@ -74,6 +74,20 @@ final class Builder implements Typeable
     }
 
     /**
+     * Load a fixture
+     *
+     * @param string $model Magento grouped class name.
+     * @param string $fixtureId Unique identifier of the entity.
+     *
+     * @return \Mage_Core_Model_Abstract
+     * @throws UndefinedFixtureModel
+     */
+    public static function load($model, $fixtureId)
+    {
+        return self::_getMagentoModel(['model' => $model], $fixtureId);
+    }
+
+    /**
      * @param $fixtureType
      * @param $hook
      * @param $entity

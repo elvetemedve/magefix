@@ -208,11 +208,23 @@ abstract class AbstractBuilder implements Builder
      */
     protected function _buildManySimple($node)
     {
-        $products = $this->_data['fixture'][$node]['products'];
+        $productsDefinedById = array_filter($this->_data['fixture'][$node]['products'], function ($product) {
+            return is_scalar($product);
+        });
 
-        return FixtureBuilder::buildMany(
-            FixtureBuilder::SIMPLE_PRODUCT_FIXTURE_TYPE, $this, $products, $this->getHook()
+        $loadedProducts = array_map(function($productId) {
+            return FixtureBuilder::load('catalog/product', $productId);
+        }, $productsDefinedById);
+
+        $productsDefinedByAttributes = array_filter($this->_data['fixture'][$node]['products'], function ($product) {
+            return is_array($product);
+        });
+
+        $newProducts = FixtureBuilder::buildMany(
+            FixtureBuilder::SIMPLE_PRODUCT_FIXTURE_TYPE, $this, $productsDefinedByAttributes, $this->getHook()
         );
+
+        return array_merge($loadedProducts, $newProducts);
     }
 
     /**
