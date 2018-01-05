@@ -64,8 +64,9 @@ class SalesOrder extends AbstractBuilder
 
     protected function _addProductsToQuote()
     {
+        $productQuantitymapping = $this->_createProductIdToQuantityMapping($this->_quoteProducts);
         foreach ($this->_quoteProducts as $product) {
-            $this->_getMageModel()->addProduct($product);
+            $this->_getMageModel()->addProduct($product, $productQuantitymapping[$product->getId()]);
         }
     }
 
@@ -248,5 +249,28 @@ class SalesOrder extends AbstractBuilder
                 'Sales Order Fixture: Quote addresses have not been defined. Check fixture yml.'
             );
         }
+    }
+
+    /**
+     * Map product ID to quantity
+     *
+     * Get quantities from path "fixture/quote_products/quantities" in fixture definition.
+     *
+     * @param array $products
+     * @param int $defaultQuantity
+     *
+     * @return array Return Product ID -> Ordered Quantity assosiations.
+     */
+    protected function _createProductIdToQuantityMapping(array $products, $defaultQuantity = 1)
+    {
+        $quantityConfig = isset($this->_data['fixture']['quote_products']['quantities'])
+            ? $this->_data['fixture']['quote_products']['quantities']
+            : [];
+        $mapping = [];
+        foreach ($products as $index => $product) {
+            /** @var \Mage_Catalog_Model_Product $product */
+            $mapping[$product->getId()] = isset($quantityConfig[$index]) ? $quantityConfig[$index] : $defaultQuantity;
+        }
+        return $mapping;
     }
 }

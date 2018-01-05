@@ -204,27 +204,14 @@ abstract class AbstractBuilder implements Builder
     /**
      * @param $node
      *
-     * @return array
+     * @return array Keeps indexes as defined in the fixture node.
      */
     protected function _buildManySimple($node)
     {
-        $productsDefinedById = array_filter($this->_data['fixture'][$node]['products'], function ($product) {
-            return is_scalar($product);
-        });
+        $loadedProducts = $this->_loadProductsById($node);
+        $newProducts = $this->_createProductsFromDefinition($node);
 
-        $loadedProducts = array_map(function($productId) {
-            return FixtureBuilder::load('catalog/product', $productId);
-        }, $productsDefinedById);
-
-        $productsDefinedByAttributes = array_filter($this->_data['fixture'][$node]['products'], function ($product) {
-            return is_array($product);
-        });
-
-        $newProducts = FixtureBuilder::buildMany(
-            FixtureBuilder::SIMPLE_PRODUCT_FIXTURE_TYPE, $this, $productsDefinedByAttributes, $this->getHook()
-        );
-
-        return array_merge($loadedProducts, $newProducts);
+        return $loadedProducts + $newProducts;
     }
 
     /**
@@ -256,5 +243,44 @@ abstract class AbstractBuilder implements Builder
                 'Fixture has no data provider specified. Check fixture yml file.'
             );
         }
+    }
+
+    /**
+     * @param $node
+     *
+     * @return array
+     */
+    private function _loadProductsById($node)
+    {
+        $loadedProducts = [];
+        foreach ($this->_data['fixture'][$node]['products'] as $index => $productDefinition) {
+            if (is_scalar($productDefinition)) {
+                $loadedProducts[$index] = FixtureBuilder::load('catalog/product', $productDefinition);
+            }
+        }
+        return $loadedProducts;
+    }
+
+    /**
+     * @param $node
+     *
+     * @return array
+     * @throws \Magefix\Exceptions\UndefinedFixtureModel
+     */
+    private function _createProductsFromDefinition($node)
+    {
+        $newProducts = [];
+        foreach ($this->_data['fixture'][$node]['products'] as $index => $productDefinition) {
+            if (is_array($productDefinition)) {
+                $newProducts[$index] = FixtureBuilder::buildMany(
+                    FixtureBuilder::SIMPLE_PRODUCT_FIXTURE_TYPE,
+                    $this,
+                    $productsDefinedByAttributes,
+                    $this->getHook()
+                );
+            }
+        }
+
+        return $newProducts;
     }
 }
